@@ -1,53 +1,53 @@
-# Báo Cáo Lab Day 21 - CI/CD cho AI Systems
+# Báo cáo Day 21 — CI/CD cho AI Systems
 
-| | |
-|---|---|
-| Họ và tên | Nguyễn Ngọc Bảo |
-| MSSV | 2A202602951 |
-| Lớp / Khóa | K4 |
-| Repo GitHub | https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems |
-| Ngày kiểm tra local | 07/10/2026 |
+**Nguyễn Ngọc Bảo · MSSV 2A202602951 · K4 · 07/10/2026**  
+[Repository công khai](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems) · AWS S3 + EC2, `ap-southeast-2`.
 
----
+## 1. Chọn siêu tham số
 
-## 1. Bộ Siêu Tham Số Đã Chọn và Lý Do
-
-| Lần chạy | n_estimators | learning_rate | max_depth | f1_score | accuracy |
-|---|---|---|---|---|---|
-| 1 | 100 | 0.1 | 3 | 0.7109 | 0.8780 |
+| Thí nghiệm MLflow | Số cây | Learning rate | Depth | F1 | Accuracy |
+|---|---:|---:|---:|---:|---:|
+| 1 | 100 | 0.10 | 3 | 0.7109 | 0.8780 |
 | 2 | 50 | 0.05 | 2 | 0.6051 | 0.8460 |
-| 3 | 150 | 0.1 | 4 | 0.7156 | 0.8760 |
+| 3 | 150 | 0.10 | 4 | 0.7156 | 0.8760 |
+| 4 | 200 | 0.10 | 5 | 0.7149 | 0.8740 |
 
-**Bộ siêu tham số đã chọn:** `n_estimators=150`, `learning_rate=0.1`, `max_depth=4`.
+Chọn **150 cây, learning rate 0.1, max depth 4** vì F1 cao nhất trong bốn
+thí nghiệm bước 1 trên batch1, vượt ngưỡng 0.65. Accuracy của thí nghiệm 1 cao hơn nhưng F1
+thấp hơn. Chưa đủ bằng chứng để kết luận mô hình không overfitting.
 
-**Lý do:** Trong ba thí nghiệm MLflow cục bộ trên, bộ tham số này có F1 cao nhất (0.7156), vượt ngưỡng 0.65. Lần 1 có accuracy cao hơn nhưng F1 thấp hơn; chưa đủ bằng chứng để kết luận mô hình không overfitting.
+## 2. Vì sao dùng F1
 
----
+Adult có khoảng 24.8% mẫu thu nhập >50K. Luôn đoán thu nhập thấp vẫn đạt
+accuracy khoảng 75.2%, trong khi F1 lớp dương bằng 0. Vì vậy Quality Gate dùng
+F1 của lớp >50K, kết hợp precision và recall của lớp cần đánh giá. Macro F1
+trung bình đều hai lớp; weighted F1 lấy trọng số theo số mẫu, nên không tương
+đương F1 lớp dương dùng trong lab.
 
-## 2. Vì Sao Ngưỡng Chất Lượng Đặt Trên F1 Chứ Không Phải Accuracy
+## 3. Khó khăn và cách xử lý
 
-Adult có khoảng 24.8% mẫu thu nhập >50K. Luôn đoán lớp thu nhập thấp vẫn đạt accuracy khoảng 75.2% nhưng F1 lớp dương bằng 0. F1 lớp dương kết hợp precision và recall của đúng lớp cần đánh giá; macro F1 trung bình đều hai lớp, còn weighted F1 dùng trọng số theo số mẫu, nên hai chỉ số này không tương đương ngưỡng F1 lớp dương của lab.
+Test từng ghi đè model thật: chuyển sang thư mục tạm và MLflow store riêng.
+Chỉ upload model tại Release sau Quality Gate; API trả 503 nếu thiếu model và
+Release kiểm tra cả health/dự đoán. Ghép batch có kiểm tra phần cuối file để
+chạy lại không nhân đôi dữ liệu. Tài khoản giới hạn region nên dùng Sydney;
+xác minh fingerprint ECDSA từ console output EC2 để sửa lỗi SSH. Bật lại
+Actions và thêm glob `data/*.dvc` để kiểm chứng trigger từ commit dữ liệu.
+**19 unit tests đã qua** trên GitHub Actions.
 
----
+## 4. Kết quả CI/CD thực tế
 
-## 3. Vấn Đề Đã Sửa và Kiểm Tra
+| GitHub Actions | Mẫu train | Mẫu holdout | F1 | Accuracy |
+|---|---:|---:|---:|---:|
+| [Bước 2](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482) | 22,361 | 500 | 0.7156 | 0.8760 |
+| [Bước 3](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033) | 44,722 | 500 | 0.7248 | 0.8800 |
 
-| Vấn đề | Cách giải quyết | Kiểm tra |
-|---|---|---|
-| Test ghi đè model thật | Thư mục tạm và MLflow store riêng | Test huấn luyện và đường dẫn tùy chọn |
-| Model không đạt vẫn ghi đè trên cloud | Chỉ Release upload sau Quality Gate | Kiểm tra workflow và các giá trị F1 biên/NaN |
-| API báo khỏe dù thiếu model | HTTP 503 và kiểm tra thêm `/score` khi release | Test API; gọi API local với model thật |
-| Ghép lại batch làm trùng dữ liệu | So sánh batch ở cuối file trước khi ghép | Test chạy hai lần, giữ nguyên mẫu trùng hợp lệ |
+Cả hai lần chạy có bốn job xanh. Bước 3 tự kích hoạt bởi commit **chỉ đổi
+`data/train_batch1.csv.dvc`**, sau khi dữ liệu mới đã được DVC đẩy lên S3.
+Trên cùng holdout, F1 tăng 0.0092 và accuracy tăng 0.0040 khi thêm dữ liệu cùng
+nguồn; chưa chứng minh khả năng tổng quát hóa trên nguồn khác.
 
----
-
-## 4. So Sánh Dữ Liệu Bước 2 và Bước 3 — Chạy Local
-
-| | f1_score | accuracy |
-|---|---|---|
-| 22.361 mẫu, chỉ `train_batch1` | 0.7156 | 0.8760 |
-| 44.722 mẫu, ghép `train_batch2` | 0.7248 | 0.8800 |
-
-**Nhận xét:** Kiểm tra local trên cùng holdout 500 mẫu cho thấy F1 tăng khoảng 0.0092 và accuracy tăng 0.0040 khi thêm dữ liệu cùng nguồn. Kết quả chi tiết lưu tại [ket-qua-local.json](ket-qua-local.json); chúng xác nhận huấn luyện local, chưa chứng minh CI/CD tự động hoặc triển khai VM.
-
-**Còn thiếu trước khi nộp:** remote GCS `labstore`, `dvc push`, VM/Secrets và bằng chứng ảnh 02–05 từ lần chạy cloud thực tế.
+[Thử model yếu](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690): F1 0.6051 làm Quality Gate
+fail, Release skipped; VersionId và ETag model S3 trước/sau giống nhau.
+API `http://54.253.158.211:8080` trả health OK và dự đoán hợp lệ.
+Số liệu, trạng thái job và kiểm tra API lưu tại [ket-qua-cloud.json](ket-qua-cloud.json);
+ảnh thật trong [anh-chup-man-hinh/](anh-chup-man-hinh/).

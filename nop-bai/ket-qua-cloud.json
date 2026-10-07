@@ -1,0 +1,211 @@
+{
+  "step2": {
+    "run_id": 37607586482,
+    "report": {
+      "f1_score": 0.7155963302752294,
+      "accuracy": 0.876,
+      "train_rows": 22361,
+      "eval_rows": 500
+    },
+    "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482",
+    "head_sha": "af428973e8299e99b6637173f64361491dec10b6",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "display_title": "ci: include direct DVC files and restore step 2 baseline",
+    "jobs": [
+      {
+        "name": "Unit Test",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482/job/112746765208"
+      },
+      {
+        "name": "Train",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482/job/112747153471"
+      },
+      {
+        "name": "Quality Gate",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482/job/112747600412"
+      },
+      {
+        "name": "Release",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482/job/112747641417"
+      }
+    ]
+  },
+  "model_before_demo": {
+    "VersionId": "8wMQ_eM1ZHbqVlDgzWTMVyS.2lotAPa3",
+    "ETag": "\"7aeb3c4240bf2855f1400386dd603740\"",
+    "LastModified": "2026-10-07 10:17:49+00:00",
+    "ContentLength": "496620"
+  },
+  "api_step2": {
+    "healthz": {
+      "status": "ok"
+    },
+    "low": {
+      "prediction": 1,
+      "label": "thu_nhap_cao"
+    },
+    "high": {
+      "prediction": 1,
+      "label": "thu_nhap_cao"
+    }
+  },
+  "demo": {
+    "run_id": 37606981690,
+    "report": {
+      "f1_score": 0.6051282051282051,
+      "accuracy": 0.846,
+      "train_rows": 22361,
+      "eval_rows": 500
+    },
+    "model_unchanged": true,
+    "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690",
+    "head_sha": "75a8ba5286afe631f48b94a82593b8e3f836381a",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "failure",
+    "display_title": "Quality Gate demo - underperforming model",
+    "jobs": [
+      {
+        "name": "Unit Test",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690/job/112744759977"
+      },
+      {
+        "name": "Train",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690/job/112745126304"
+      },
+      {
+        "name": "Quality Gate",
+        "status": "completed",
+        "conclusion": "failure",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690/job/112745586353"
+      },
+      {
+        "name": "Release",
+        "status": "completed",
+        "conclusion": "skipped",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690/job/112745623409"
+      }
+    ]
+  },
+  "model_after_demo": {
+    "VersionId": "8wMQ_eM1ZHbqVlDgzWTMVyS.2lotAPa3",
+    "ETag": "\"7aeb3c4240bf2855f1400386dd603740\"",
+    "LastModified": "2026-10-07 10:17:49+00:00",
+    "ContentLength": "496620"
+  },
+  "step3": {
+    "run_id": 37607657033,
+    "report": {
+      "f1_score": 0.7247706422018348,
+      "accuracy": 0.88,
+      "train_rows": 44722,
+      "eval_rows": 500
+    },
+    "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033",
+    "head_sha": "097e46aea878269b46b27fa193fc2d9bfb9e22ec",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "display_title": "data: add train_batch2 for continuous training (44722 rows)",
+    "jobs": [
+      {
+        "name": "Unit Test",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033/job/112747941008"
+      },
+      {
+        "name": "Train",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033/job/112748367752"
+      },
+      {
+        "name": "Quality Gate",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033/job/112748820494"
+      },
+      {
+        "name": "Release",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033/job/112748862914"
+      }
+    ]
+  },
+  "model_final": {
+    "VersionId": "mzzNBNvswoL8W_RtPxRpIh857mlnB_w4",
+    "ETag": "\"8bcb6e197e0a5329d5272d057507174e\"",
+    "LastModified": "2026-10-07 10:34:27+00:00",
+    "ContentLength": "503228"
+  },
+  "api_final": {
+    "healthz": {
+      "http_status": 200,
+      "response": {
+        "status": "ok"
+      }
+    },
+    "score": {
+      "http_status": 200,
+      "response": {
+        "prediction": 1,
+        "label": "thu_nhap_cao"
+      }
+    },
+    "model_consistency": {
+      "samples_checked": 7,
+      "samples_changed_since_step2_checked": 2,
+      "all_match_step3_model": true
+    }
+  },
+  "security_group_ingress_final": [
+    {
+      "IpProtocol": "tcp",
+      "FromPort": 8080,
+      "ToPort": 8080,
+      "UserIdGroupPairs": [],
+      "IpRanges": [
+        {
+          "Description": "Public lab prediction API",
+          "CidrIp": "0.0.0.0/0"
+        }
+      ],
+      "Ipv6Ranges": [],
+      "PrefixListIds": []
+    }
+  ],
+  "initial_step2": {
+    "run_id": 37606127901,
+    "report": {
+      "f1_score": 0.7155963302752294,
+      "accuracy": 0.876,
+      "train_rows": 22361,
+      "eval_rows": 500
+    }
+  },
+  "checked_at": "2026-10-07T17:36:48.700414+07:00",
+  "cloud": {
+    "region": "ap-southeast-2",
+    "bucket": "income-day21-2a202602951-704887592344",
+    "instance_id": "i-0e4cab99d0a4e7a82",
+    "public_ip": "54.253.158.211",
+    "security_group_id": "sg-07bda73e1c9bdaa56"
+  },
+  "repository": "https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems"
+}

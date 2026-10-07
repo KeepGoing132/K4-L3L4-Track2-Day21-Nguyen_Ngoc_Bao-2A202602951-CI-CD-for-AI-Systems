@@ -1,73 +1,36 @@
-# Nộp Bài - Day 21: CI/CD cho AI Systems
+# Bằng chứng nộp bài Day 21
 
-Thư mục này là nơi chứa **bằng chứng nộp bài**. Bạn không cần tạo thêm thư mục nào khác:
-điền vào các file có sẵn và bỏ ảnh chụp màn hình vào đúng tên file đã quy định.
+**Nguyễn Ngọc Bảo · 2A202602951 · K4**
 
-```
-nop-bai/
-├── README.md                  <- file này (checklist)
-├── bao-cao.md                 <- template báo cáo, không quá 1 trang A4
-└── anh-chup-man-hinh/
-    ├── README.md              <- mô tả yêu cầu của từng ảnh
-    ├── 01-mlflow-ui.png
-    ├── 02-actions-buoc-2.png
-    ├── 03-actions-buoc-3.png
-    ├── 04-curl-api.png
-    └── 05-cloud-storage.png
-```
+- [x] [Repository công khai](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems) chứa code, workflow và DVC metadata.
+- [x] MLflow có ít nhất ba bộ siêu tham số và đủ F1/accuracy.
+- [x] [Bước 2](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482): cả bốn job thành công trên 22.361 mẫu.
+- [x] [Bước 3](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607657033): commit chỉ cập nhật dữ liệu tự kích hoạt cả bốn job, train 44.722 mẫu.
+- [x] [Thử Quality Gate](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690): chặn model F1 0.6051, giữ nguyên model S3.
+- [x] DVC data và model đã có trên Amazon S3; API EC2 được kiểm tra từ IP công khai.
+- [x] [Báo cáo](bao-cao.md) hoàn chỉnh; nội dung vừa một trang A4 với Arial 11pt, lề 16mm.
+- [x] Đủ chuỗi ảnh 01–05 và ảnh chứng minh Quality Gate; mỗi ảnh dưới 1 MB.
+- [x] Code, báo cáo và toàn bộ ảnh đã push lên GitHub.
+- [x] Kiểm tra truy cập repository và bằng chứng không cần đăng nhập GitHub.
+- [ ] Dán URL repository vào bài Day 21 trên https://vlearn.dev (chưa có phiên đăng nhập VLearn để thực hiện).
 
----
+## Các ảnh đã nộp
 
-## Checklist Trước Khi Nộp
+| File | Bằng chứng |
+|---|---|
+| [01-mlflow-ui.png](anh-chup-man-hinh/01-mlflow-ui.png) | Thí nghiệm MLflow, tham số, F1 và accuracy |
+| [02-actions-buoc-2.png](anh-chup-man-hinh/02-actions-buoc-2.png) | Bốn job xanh ở bước 2 |
+| [03-actions-buoc-3.png](anh-chup-man-hinh/03-actions-buoc-3.png) | Commit dữ liệu kích hoạt workflow, bốn job xanh |
+| [04-curl-api.png](anh-chup-man-hinh/04-curl-api.png) | Terminal thật gọi health và score trên EC2 |
+| [05-cloud-storage.png](anh-chup-man-hinh/05-cloud-storage.png) | Bucket S3 có `dvc/` và `artifacts/` |
+| [05a-storage-dvc.png](anh-chup-man-hinh/05a-storage-dvc.png) | Các phiên bản dữ liệu trong DVC cache |
+| [05b-storage-model.png](anh-chup-man-hinh/05b-storage-model.png) | Model và report tại `artifacts/current/` |
+| [07-quality-gate-chan.png](anh-chup-man-hinh/07-quality-gate-chan.png) | Quality Gate fail, Release skipped đúng chủ đích |
 
-Đánh dấu `[x]` khi hoàn thành từng mục:
+Ảnh trình duyệt có thanh địa chỉ. Các ảnh là ảnh chụp trang/terminal đang chạy thực tế.
+Kết quả cloud đầy đủ: [ket-qua-cloud.json](ket-qua-cloud.json).
+Kết quả local trước triển khai: [ket-qua-local.json](ket-qua-local.json).
+Hướng dẫn AWS và cách dừng tài nguyên sau khi chấm: [tasks/aws.md](../tasks/aws.md).
 
-- [ ] Repo GitHub ở chế độ **public** và chứa toàn bộ code, cấu hình đã hoàn thiện.
-- [ ] Đủ 5 ảnh trong `anh-chup-man-hinh/`, đúng tên file, đúng thứ tự (xem
-      [yêu cầu chi tiết](anh-chup-man-hinh/README.md)).
-- [ ] `bao-cao.md` đã điền đủ 3 mục bắt buộc và không vượt quá 1 trang A4.
-- [ ] Đã `git push` toàn bộ thư mục `nop-bai/` lên GitHub.
-- [ ] Dán URL repo GitHub vào bài nộp trên **https://vlearn.dev**.
-- [ ] Mở lại URL vừa nộp ở chế độ ẩn danh để chắc chắn repo public và người chấm xem được.
-
----
-
-## Ảnh Chụp Màn Hình Tương Ứng Với Rubric
-
-| Ảnh | Chứng minh hạng mục nào trong rubric | Điểm |
-|---|---|---|
-| `01-mlflow-ui.png` | Bước 1 - MLflow tracking, Bước 1 - Độ đo | 20 |
-| `02-actions-buoc-2.png` | Bước 2 - CI/CD (bốn jobs màu xanh) | 16 |
-| `03-actions-buoc-3.png` | Bước 3 - Tự động hóa | 12 |
-| `04-curl-api.png` | Bước 2 - Serving | 12 |
-| `05-cloud-storage.png` | Bước 2 - DVC | 12 |
-
-Phần `bao-cao.md` chứng minh hạng mục **Bước 1 - Phân tích** (4 điểm) và là nơi bạn giải
-trình khi một ảnh nào đó chưa thể hiện đủ (ví dụ quality gate đã chặn đúng một lần).
-
----
-
-## Quy Ước Chung
-
-- **Định dạng ảnh**: `.png` (ưu tiên) hoặc `.jpg`. Nếu dùng `.jpg`, giữ nguyên phần tên,
-  chỉ đổi đuôi — ví dụ `01-mlflow-ui.jpg`.
-- **Không đổi số thứ tự đầu tên file.** Thứ tự này là thứ tự chấm bài.
-- **Không che thông tin cần chấm**: tên job, trạng thái màu xanh, giá trị `f1_score`,
-  đường dẫn bucket. Được phép che email cá nhân và khóa bí mật.
-- **Cần chụp cả URL trên thanh địa chỉ** với các ảnh chụp từ trình duyệt (MLflow UI,
-  GitHub Actions, Cloud Storage Console) để xác nhận đúng repo/project của bạn.
-- **Tuyệt đối không commit khóa bí mật**: `sa-key.json`, nội dung GitHub Secrets, access
-  key của cloud. Nếu ảnh lỡ chứa các thông tin này, hãy che lại trước khi commit.
-
----
-
-## Ghi Chú Về Kích Thước Repo
-
-Ảnh chụp màn hình được commit trực tiếp vào Git. Giữ mỗi ảnh dưới **1 MB** (chụp vùng cần
-thiết thay vì toàn màn hình 4K, hoặc nén lại trước khi commit) để repo không phình to.
-
-Nếu bạn dùng macOS, có thể nén nhanh bằng lệnh sẵn có:
-
-```bash
-sips -Z 1600 nop-bai/anh-chup-man-hinh/01-mlflow-ui.png
-```
+API đang hoạt động: http://54.253.158.211:8080/healthz.
+EC2, EBS và IPv4 công khai được giữ để chấm bài và có thể phát sinh phí.

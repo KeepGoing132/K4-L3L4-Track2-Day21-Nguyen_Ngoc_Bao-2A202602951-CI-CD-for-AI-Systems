@@ -256,8 +256,14 @@ $env:MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
 .\.venv\Scripts\python.exe -m uvicorn src.serve:app --host 127.0.0.1 --port 8080
 ```
 
-Kết quả chạy trên máy được lưu trong `nop-bai/ket-qua-local.json` và không thay thế
-bằng chứng GitHub Actions hay triển khai VM.
+**Kết quả đã kiểm chứng trên AWS ngày 07/10/2026:** bước 2 và bước 3 đều có bốn
+job thành công, bước 3 tự kích hoạt từ commit dữ liệu. F1 tăng từ 0.7156 lên 0.7248.
+Quality Gate chặn model F1 0.6051 và giữ nguyên model đang chạy. API EC2:
+http://54.253.158.211:8080/healthz.
+
+Xem [bằng chứng nộp bài](nop-bai/README.md), [báo cáo](nop-bai/bao-cao.md),
+[kết quả cloud](nop-bai/ket-qua-cloud.json) và [ảnh thực tế](nop-bai/anh-chup-man-hinh/).
+Kết quả local trước triển khai được giữ tại `nop-bai/ket-qua-local.json`.
 
 | Bước | Nội dung | File hướng dẫn |
 |---|---|---|
