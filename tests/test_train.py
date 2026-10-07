@@ -2,6 +2,7 @@ import os
 import json
 import numpy as np
 import pandas as pd
+import joblib
 from src.train import train
 
 
@@ -22,26 +23,24 @@ def _make_temp_data(tmp_path):
     n = 200
 
     # TODO 1: Tao mang X co kich thuoc (n, len(FEATURE_NAMES)) voi gia tri [0, 1)
-    # X = rng.random((n, len(FEATURE_NAMES)))
+    X = rng.random((n, len(FEATURE_NAMES)))
 
     # TODO 2: Tao mang y gom n phan tu nguyen ngau nhien trong [0, 2)
     # Chu y: bai toan nay chi co HAI lop (0 va 1), nen can tren la 2.
-    # y = rng.integers(0, 2, size=n)
+    y = rng.integers(0, 2, size=n)
 
     # TODO 3: Xay dung DataFrame, them cot "target"
-    # df = pd.DataFrame(X, columns=FEATURE_NAMES)
-    # df["target"] = y
+    df = pd.DataFrame(X, columns=FEATURE_NAMES)
+    df["target"] = y
 
     # TODO 4: Luu 160 dong dau lam tap huan luyen, 40 dong cuoi lam tap holdout
-    # train_path = str(tmp_path / "train.csv")
-    # eval_path  = str(tmp_path / "holdout.csv")
-    # df.iloc[:160].to_csv(train_path, index=False)
-    # df.iloc[160:].to_csv(eval_path,  index=False)
+    train_path = str(tmp_path / "train.csv")
+    eval_path = str(tmp_path / "holdout.csv")
+    df.iloc[:160].to_csv(train_path, index=False)
+    df.iloc[160:].to_csv(eval_path, index=False)
 
     # TODO 5: Tra ve (train_path, eval_path)
-    # return train_path, eval_path
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    return train_path, eval_path
 
 
 def test_train_returns_float(tmp_path):
@@ -50,13 +49,15 @@ def test_train_returns_float(tmp_path):
 
     # TODO 6: Goi ham train() voi sieu tham so nho
     # (n_estimators=10, learning_rate=0.1, max_depth=2) va cac duong dan file vua tao
-    # f1 = train({"n_estimators": 10, "learning_rate": 0.1, "max_depth": 2}, ...)
+    f1 = train(
+        {"n_estimators": 10, "learning_rate": 0.1, "max_depth": 2},
+        data_path=train_path,
+        eval_path=eval_path,
+    )
 
     # TODO 7: Kiem tra ket qua
-    # assert isinstance(f1, float)
-    # assert 0.0 <= f1 <= 1.0
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    assert isinstance(f1, float)
+    assert 0.0 <= f1 <= 1.0
 
 
 def test_report_file_created(tmp_path):
@@ -69,13 +70,13 @@ def test_report_file_created(tmp_path):
     )
 
     # TODO 8: Kiem tra file ton tai va noi dung dung dinh dang
-    # assert os.path.exists("outputs/report.json")
-    # with open("outputs/report.json") as f:
-    #     report = json.load(f)
-    # assert "f1_score" in report
-    # assert "accuracy" in report
-
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+    assert os.path.exists("outputs/report.json")
+    with open("outputs/report.json") as f:
+        report = json.load(f)
+    assert "f1_score" in report
+    assert "accuracy" in report
+    assert report["train_rows"] == 160
+    assert report["eval_rows"] == 40
 
 
 def test_model_file_created(tmp_path):
@@ -88,6 +89,25 @@ def test_model_file_created(tmp_path):
     )
 
     # TODO 9: Kiem tra file model ton tai
-    # assert os.path.exists("models/model.joblib")
+    assert os.path.exists("models/model.joblib")
+    model = joblib.load("models/model.joblib")
+    evaluation = pd.read_csv(eval_path)
+    predictions = model.predict(evaluation[FEATURE_NAMES])
+    assert len(predictions) == 40
+    assert set(predictions) <= {0, 1}
 
-    pass  # xoa dong nay sau khi hoan thanh tat ca TODO ben tren
+
+def test_custom_paths_leave_existing_artifacts_untouched(tmp_path):
+    os.makedirs("outputs")
+    os.makedirs("models")
+    (tmp_path / "outputs/report.json").write_text("original report")
+    (tmp_path / "models/model.joblib").write_bytes(b"original model")
+    train_path, eval_path = _make_temp_data(tmp_path)
+    f1 = train(
+        {"n_estimators": 10, "learning_rate": 0.1, "max_depth": 2},
+        data_path=train_path, eval_path=eval_path,
+        report_path="experiment/report.json", model_path="experiment/model.joblib",
+    )
+    assert (tmp_path / "outputs/report.json").read_text() == "original report"
+    assert (tmp_path / "models/model.joblib").read_bytes() == b"original model"
+    assert json.loads((tmp_path / "experiment/report.json").read_text())["f1_score"] == f1

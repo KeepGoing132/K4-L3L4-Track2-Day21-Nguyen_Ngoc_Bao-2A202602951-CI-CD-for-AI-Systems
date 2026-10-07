@@ -43,6 +43,10 @@ Toàn bộ lab được triển khai theo ba bước liên tiếp, mỗi bước
 
 Bước 1 chỉ chạy trên máy tính cá nhân. Bước 2 và Bước 3 sử dụng toàn bộ kiến trúc trên.
 
+**Cloud của phiên bản nộp bài này: AWS S3 + EC2, region `ap-southeast-2`.**
+Xem [hướng dẫn AWS](tasks/aws.md) cho Secrets, IAM, serving và kiểm tra pipeline.
+Các ví dụ GCP trong tài liệu gốc cần ánh xạ sang AWS theo hướng dẫn này.
+
 ---
 
 ## Yêu Cầu Trước Khi Bắt Đầu
@@ -218,20 +222,42 @@ mlflow==2.13.0
 scikit-learn==1.4.2
 pandas==2.2.2
 # DVC extra theo provider: [gs]=GCP, [s3]=AWS, [azure]=Azure
-dvc[gs]==3.50.1
+dvc[s3]==3.50.1
 pathspec==0.11.2
 pytest==8.2.0
 fastapi==0.111.0
 uvicorn==0.29.0
 joblib==1.4.2
 # Cloud SDK theo provider: google-cloud-storage (GCP), boto3 (AWS), azure-storage-blob (Azure)
-google-cloud-storage==2.16.0
+boto3==1.41.5
 pyyaml==6.0.1
 ```
 
 ---
 
 ## Hướng Dẫn Lab
+
+### Trạng thái và kiểm tra phiên bản code hiện tại
+
+- Unit test dùng thư mục tạm và MLflow store riêng, không ghi đè kết quả huấn luyện thật.
+- `append_batch.py` nhận biết batch đã được ghép ở cuối file, nên chạy lại không nhân đôi dữ liệu.
+- Job Train lưu model ứng viên dưới dạng GitHub Actions artifact; chỉ job Release sau
+  Quality Gate mới upload vào `artifacts/current/model.joblib`.
+- `/healthz` trả HTTP 503 khi thiếu model. Release kiểm tra cả `/healthz` và dự đoán `/score`.
+- DVC đã theo dõi ba file CSV và dùng remote `labstore` trên Amazon S3.
+  Cấu hình VM, IAM và GitHub Secrets/Variables xem [hướng dẫn AWS](tasks/aws.md).
+
+Trên Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests/ -v
+$env:MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
+.\.venv\Scripts\python.exe src/train.py
+.\.venv\Scripts\python.exe -m uvicorn src.serve:app --host 127.0.0.1 --port 8080
+```
+
+Kết quả chạy trên máy được lưu trong `nop-bai/ket-qua-local.json` và không thay thế
+bằng chứng GitHub Actions hay triển khai VM.
 
 | Bước | Nội dung | File hướng dẫn |
 |---|---|---|

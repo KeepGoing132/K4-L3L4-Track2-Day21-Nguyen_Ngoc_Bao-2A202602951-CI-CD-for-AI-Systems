@@ -84,7 +84,7 @@ dvc remote add -d labstore gs://$BUCKET/dvc   # thay URL theo provider
 
 # Cấu hình credentials:
 # GCP: thêm đường dẫn service account key
-dvc remote modify labstore credentialpath sa-key.json
+dvc remote modify --local labstore credentialpath sa-key.json
 # AWS: tự đọc ~/.aws/credentials hoặc biến môi trường AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
 # Azure: dvc remote modify labstore connection_string "<YOUR_CONNECTION_STRING>"
 
@@ -145,7 +145,7 @@ Bên trong VM, cài đặt các thư viện cần thiết:
 
 ```bash
 sudo apt update && sudo apt install -y python3-pip
-pip3 install fastapi uvicorn scikit-learn joblib google-cloud-storage
+pip3 install fastapi==0.111.0 uvicorn==0.29.0 scikit-learn==1.4.2 pandas==2.2.2 joblib==1.4.2 google-cloud-storage==2.16.0
 
 mkdir -p ~/models ~/src
 ```
@@ -401,6 +401,11 @@ Ba test đều phải qua trước khi tiếp tục.
 
 Pipeline gồm bốn jobs chạy theo thứ tự: Unit Test -> Train -> Quality Gate -> Release.
 
+Job Train chỉ lưu model ứng viên vào GitHub Actions artifact. Sau khi F1 đạt ngưỡng,
+job Release tải đúng artifact của lần chạy rồi mới ghi model lên Cloud Storage.
+Không upload vào `artifacts/current/` trong job Train vì model không đạt ngưỡng có
+thể bị phục vụ sau một lần VM khởi động lại. Workflow dùng remote DVC tên `labstore`.
+
 Tạo file `.github/workflows/cicd.yml` theo khung dưới đây:
 
 ```yaml
@@ -410,14 +415,29 @@ on:
   push:
     branches: [main]
     paths:
-      - 'data/**.dvc'
-      - 'src/**.py'
+      - 'data/**/*.dvc'
+      - '.dvc/config'
+      - 'src/**/*.py'
+      - 'tests/**/*.py'
+      - 'append_batch.py'
+      - 'requirements.txt'
+      - '.github/workflows/cicd.yml'
       - 'params.yaml'
   workflow_dispatch:
 
+# Khong de hai pipeline cung ghi de model current va restart VM dong thoi.
+concurrency:
+  group: income-model-release
+  cancel-in-progress: false
+
 jobs:
 
-  # JOB 1: Chạy unit tests trên dữ liệu ảo (không cần cloud storage)
+  # ---------------------------------------------------------------------------
+  # JOB 1 - UNIT TEST
+  # Chay unit tests tren du lieu ao (khong can ket noi cloud storage).
+  # Neu co bat ky test nao that bai, pipeline dung lai o day va khong tien hanh
+  # huan luyen hay trien khai.
+  # ---------------------------------------------------------------------------
   unit-test:
     name: Unit Test
     runs-on: ubuntu-latest
@@ -431,14 +451,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run tests
-        # TODO 2.11.1: Chạy pytest trên thư mục tests/ với cờ -v
-        run: # <điền lệnh ở đây>
+      - name: Run unit tests
+        # TODO 1: Viet lenh de chay pytest tren thu muc tests/ voi co -v
+        run: pytest tests/ -v
 
-  # JOB 2: Huấn luyện mô hình trên dữ liệu thực, upload artifact lên cloud storage
+
+  # ---------------------------------------------------------------------------
+  # JOB 2 - TRAIN
+  # Pull du lieu, huan luyen, luu model ung vien vao artifact cua lan chay.
+  # Chi chay khi Job 1 (Unit Test) hoan thanh thanh cong.
+  # ---------------------------------------------------------------------------
   train:
     name: Train
-    needs: unit-test         # Chỉ chạy khi job unit-test qua
+    needs: unit-test
     runs-on: ubuntu-latest
     outputs:
       f1: ${{ steps.read_report.outputs.f1 }}
@@ -454,67 +479,130 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Authenticate to Cloud Storage
-        # TODO 2.11.2: Ghi nội dung secret STORAGE_CREDENTIALS ra file tạm
-        #   và set biến môi trường xác thực tương ứng:
-        #   GCP: GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa-key.json
-        #   AWS: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
-        #   Azure: AZURE_STORAGE_CONNECTION_STRING
+        env:
+          STORAGE_CREDENTIALS: ${{ secrets.STORAGE_CREDENTIALS }}
         run: |
-          # <điền code ở đây>
+          printf '%s' "$STORAGE_CREDENTIALS" > "$RUNNER_TEMP/sa-key.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/sa-key.json" >> "$GITHUB_ENV"
 
       - name: Pull data with DVC
-        # TODO 2.11.3: Dùng lệnh dvc pull để tải train_batch1.csv và holdout.csv từ cloud storage
-        run: # <điền lệnh ở đây>
+        run: |
+          # Override duong dan credentials local neu .dvc/config co credentialpath.
+          dvc remote modify --local labstore credentialpath "$GOOGLE_APPLICATION_CREDENTIALS"
+          dvc pull data/train_batch1.csv.dvc data/holdout.csv.dvc
 
       - name: Train model
         run: python src/train.py
 
       - name: Read report
         id: read_report
-        # TODO 2.11.4: Đọc giá trị "f1_score" từ file outputs/report.json
-        #   và set nó thành output "f1" để job quality-gate có thể đọc được.
-        #   Gợi ý: sử dụng python -c "..." và echo "f1=..." >> $GITHUB_OUTPUT
+        # TODO 4: Doc gia tri "f1_score" tu outputs/report.json bang Python inline.
         run: |
-          # <điền code ở đây>
+          F1=$(python -c "import json; d=json.load(open('outputs/report.json')); print(d['f1_score'])")
+          echo "f1=$F1" >> $GITHUB_OUTPUT
 
-      - name: Upload model to Cloud Storage
-        # TODO 2.11.5: Sử dụng google-cloud-storage SDK để upload
-        #   file models/model.joblib lên gs://<bucket>/artifacts/current/model.joblib
-        run: |
-          python - <<'PYEOF'
-          # <điền code Python ở đây>
-          PYEOF
+      - name: Save candidate model
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-model
+          path: models/model.joblib
+          if-no-files-found: error
 
       - name: Save report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: report
           path: outputs/report.json
+          if-no-files-found: error
 
-  # JOB 3: Kiểm tra chất lượng - chỉ cho phép triển khai khi f1_score >= 0.65
-  #   Lưu ý: ngưỡng đặt trên f1_score chứ KHÔNG phải accuracy. Dữ liệu có tỷ lệ
-  #   lớp 75/25, nên một mô hình đoán bừa đã đạt accuracy 0.75 mà hoàn toàn vô dụng.
+
+  # ---------------------------------------------------------------------------
+  # JOB 3 - QUALITY GATE
+  # Kiem tra nguong chat luong (f1_score >= 0.65).
+  # Pipeline dung lai o day neu mo hinh chua dat yeu cau.
+  #
+  # Luu y: nguong o day dat tren f1_score chu KHONG phai accuracy. Bo du lieu
+  # Adult co ty le lop 75/25, nen mot mo hinh doan bua "thu nhap thap" cho moi
+  # mau da dat accuracy 0.75 ma hoan toan vo dung.
+  # Chi chay khi Job 2 (Train) hoan thanh thanh cong.
+  # ---------------------------------------------------------------------------
   quality-gate:
     name: Quality Gate
-    needs: train             # Chỉ chạy khi job train qua
+    needs: train
     runs-on: ubuntu-latest
     steps:
 
       - name: Check quality gate
-        # TODO 2.11.6: Đọc giá trị f1 từ output của job train.
-        #   Nếu f1 < 0.65, kết thúc với lỗi (SystemExit hoặc exit 1).
-        #   Nếu đạt, in thông báo và tiếp tục.
+        # TODO 6: Doc f1 tu output cua job train.
         run: |
           python - <<'PYEOF'
-          # <điền code Python ở đây>
+          import math
+          f1 = float("${{ needs.train.outputs.f1 }}")
+          if not math.isfinite(f1) or not 0.65 <= f1 <= 1.0:
+              raise SystemExit(f"FAILED: f1_score {f1} must be finite and in [0.65, 1]. Huy trien khai.")
+          print(f"PASSED: f1_score {f1:.4f} >= 0.65. Tiep tuc trien khai model.")
           PYEOF
 
-  # JOB 4: Triển khai sau khi quality gate qua
+
+  # ---------------------------------------------------------------------------
+  # JOB 4 - RELEASE
+  # Trien khai len VM qua SSH.
+  # Chi chay khi Job 3 (Quality Gate) hoan thanh thanh cong.
+  # ---------------------------------------------------------------------------
   release:
     name: Release
-    needs: quality-gate      # Chỉ chạy khi job quality-gate qua
+    needs: quality-gate
     runs-on: ubuntu-latest
     steps:
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install Cloud Storage SDK
+        run: pip install google-cloud-storage==2.16.0
+
+      - name: Download approved candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: candidate-model
+          path: models
+
+      - name: Download report
+        uses: actions/download-artifact@v4
+        with:
+          name: report
+          path: outputs
+
+      - name: Copy serving code to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: src/serve.py
+          target: /home/${{ secrets.SERVER_USER }}/src
+          strip_components: 1
+          overwrite: true
+
+      - name: Publish approved model to Cloud Storage
+        env:
+          STORAGE_CREDENTIALS: ${{ secrets.STORAGE_CREDENTIALS }}
+          ARTIFACT_BUCKET: ${{ secrets.ARTIFACT_BUCKET }}
+        run: |
+          printf '%s' "$STORAGE_CREDENTIALS" > "$RUNNER_TEMP/sa-key.json"
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa-key.json"
+          python - <<'PYEOF'
+          import os
+          from google.cloud import storage
+
+          bucket = storage.Client().bucket(os.environ["ARTIFACT_BUCKET"])
+          bucket.blob("artifacts/current/model.joblib").upload_from_filename("models/model.joblib")
+          bucket.blob("artifacts/current/report.json").upload_from_filename("outputs/report.json")
+          print("Published approved model and report.")
+          PYEOF
 
       - name: SSH deploy to VM
         uses: appleboy/ssh-action@v1.0.3
@@ -523,10 +611,22 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
-            # TODO 2.11.7: Restart service income-api trên VM.
-            # TODO 2.11.8: Chờ server sẵn sàng (sleep 5 giây) rồi gọi curl /healthz để xác nhận.
-            #   Nếu health check thất bại, thoát với exit 1.
-            # <điền lệnh bash ở đây>
+            set -eu
+            sudo systemctl restart income-api
+            ready=0
+            for attempt in $(seq 1 30); do
+              if curl --max-time 5 -sf http://localhost:8080/healthz; then
+                ready=1
+                break
+              fi
+              sleep 2
+            done
+            test "$ready" -eq 1 || { echo "Health check failed."; exit 1; }
+            curl --max-time 10 -sf -X POST http://localhost:8080/score \
+              -H 'Content-Type: application/json' \
+              -d '{"features": [28, 2, 14, 2, 11, 0, 1, 0, 0, 45]}' \
+              | python3 -c 'import json,sys; r=json.load(sys.stdin); p=r.get("prediction"); assert type(p) is int and p in (0,1); assert r.get("label") == ("thu_nhap_cao" if p else "thu_nhap_thap")'
+            echo "Health and prediction checks passed."
 ```
 
 ---
@@ -607,7 +707,7 @@ cat .dvc/config
 Nếu chưa có mục `credentialpath`, chạy lại:
 
 ```bash
-dvc remote modify labstore credentialpath sa-key.json
+dvc remote modify --local labstore credentialpath sa-key.json
 ```
 
 **GitHub Actions `dvc pull` thất bại**

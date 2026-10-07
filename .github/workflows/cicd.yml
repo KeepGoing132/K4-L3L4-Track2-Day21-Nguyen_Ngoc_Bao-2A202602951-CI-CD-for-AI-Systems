@@ -1,13 +1,29 @@
 name: Income Model CI/CD
+run-name: ${{ github.event_name == 'workflow_dispatch' && inputs.quality_gate_demo && 'Quality Gate demo - underperforming model' || github.event.head_commit.message || 'Income Model CI/CD' }}
 
 on:
   push:
     branches: [main]
     paths:
-      - 'data/**.dvc'
-      - 'src/**.py'
+      - 'data/**/*.dvc'
+      - '.dvc/config'
+      - 'src/**/*.py'
+      - 'tests/**/*.py'
+      - 'append_batch.py'
+      - 'requirements.txt'
+      - '.github/workflows/cicd.yml'
       - 'params.yaml'
   workflow_dispatch:
+    inputs:
+      quality_gate_demo:
+        description: Train a deliberately weak model to demonstrate blocked Release
+        type: boolean
+        default: false
+
+# Khong de hai pipeline cung ghi de model current va restart VM dong thoi.
+concurrency:
+  group: income-model-release
+  cancel-in-progress: false
 
 jobs:
 
@@ -32,12 +48,12 @@ jobs:
 
       - name: Run unit tests
         # TODO 1: Viet lenh de chay pytest tren thu muc tests/ voi co -v
-        run: # <dien lenh o day>
+        run: pytest tests/ -v
 
 
   # ---------------------------------------------------------------------------
   # JOB 2 - TRAIN
-  # Xac thuc cloud storage, pull du lieu bang DVC, huan luyen mo hinh, upload artifact.
+  # Pull du lieu, huan luyen, luu model ung vien vao artifact cua lan chay.
   # Chi chay khi Job 1 (Unit Test) hoan thanh thanh cong.
   # ---------------------------------------------------------------------------
   train:
@@ -57,20 +73,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Authenticate to Cloud Storage
-        # TODO 2: Ghi noi dung credentials ra file tam va set bien moi truong xac thuc.
-        # GCP:   echo '${{ secrets.STORAGE_CREDENTIALS }}' > /tmp/sa-key.json
-        #        echo "GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa-key.json" >> $GITHUB_ENV
-        # AWS:   echo "AWS_ACCESS_KEY_ID=..." >> $GITHUB_ENV  (lay tu secrets)
-        #        echo "AWS_SECRET_ACCESS_KEY=..." >> $GITHUB_ENV
-        # Azure: echo "AZURE_STORAGE_CONNECTION_STRING=..." >> $GITHUB_ENV
-        run: |
-          # <dien code o day>
+      - name: Authenticate to Amazon S3
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          aws-access-key-id: ${{ fromJSON(secrets.STORAGE_CREDENTIALS).aws_access_key_id }}
+          aws-secret-access-key: ${{ fromJSON(secrets.STORAGE_CREDENTIALS).aws_secret_access_key }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Pull data with DVC
-        # TODO 3: Pull cac file du lieu can thiet tu cloud storage bang lenh dvc pull.
-        #         Chi pull train_batch1.csv va holdout.csv (khong can train_batch2.csv).
-        run: # <dien lenh o day>
+        run: dvc pull data/train_batch1.csv.dvc data/holdout.csv.dvc
+
+      - name: Use weak parameters for Quality Gate demonstration
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.quality_gate_demo }}
+        run: |
+          printf 'n_estimators: 50\nlearning_rate: 0.05\nmax_depth: 2\n' > params.yaml
 
       - name: Train model
         run: python src/train.py
@@ -78,28 +94,23 @@ jobs:
       - name: Read report
         id: read_report
         # TODO 4: Doc gia tri "f1_score" tu outputs/report.json bang Python inline.
-        #         Set ket qua thanh output "f1" de job quality-gate co the doc.
-        #
-        # Goi y:
-        #   F1=$(python -c "import json; d=json.load(open('outputs/report.json')); print(d['f1_score'])")
-        #   echo "f1=$F1" >> $GITHUB_OUTPUT
         run: |
-          # <dien code o day>
+          F1=$(python -c "import json; d=json.load(open('outputs/report.json')); print(d['f1_score'])")
+          echo "f1=$F1" >> $GITHUB_OUTPUT
 
-      - name: Upload model to Cloud Storage
-        # TODO 5: Su dung cloud SDK de upload models/model.joblib len
-        #         <bucket>/artifacts/current/model.joblib.
-        #         Ten bucket lay tu secret ARTIFACT_BUCKET.
-        run: |
-          python - <<'PYEOF'
-          # <dien code Python o day>
-          PYEOF
+      - name: Save candidate model
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-model
+          path: models/model.joblib
+          if-no-files-found: error
 
       - name: Save report as artifact
         uses: actions/upload-artifact@v4
         with:
           name: report
           path: outputs/report.json
+          if-no-files-found: error
 
 
   # ---------------------------------------------------------------------------
@@ -120,17 +131,13 @@ jobs:
 
       - name: Check quality gate
         # TODO 6: Doc f1 tu output cua job train.
-        #         Neu f1 < 0.65, ket thuc voi loi ro rang.
-        #         Neu dat nguong, in thong bao va tiep tuc.
-        #
-        # Goi y:
-        #   f1 = float("${{ needs.train.outputs.f1 }}")
-        #   if f1 < 0.65:
-        #       raise SystemExit(f"FAILED: f1_score {f1:.4f} < 0.65. Huy trien khai.")
-        #   print("PASSED: dang trien khai model.")
         run: |
           python - <<'PYEOF'
-          # <dien code Python o day>
+          import math
+          f1 = float("${{ needs.train.outputs.f1 }}")
+          if not math.isfinite(f1) or not 0.65 <= f1 <= 1.0:
+              raise SystemExit(f"FAILED: f1_score {f1} must be finite and in [0.65, 1]. Huy trien khai.")
+          print(f"PASSED: f1_score {f1:.4f} >= 0.65. Tiep tuc trien khai model.")
           PYEOF
 
 
@@ -145,19 +152,113 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install AWS SDK
+        run: pip install boto3==1.41.5
+
+      - name: Download approved candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: candidate-model
+          path: models
+
+      - name: Download report
+        uses: actions/download-artifact@v4
+        with:
+          name: report
+          path: outputs
+
+      - name: Authenticate to Amazon S3
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          aws-access-key-id: ${{ fromJSON(secrets.STORAGE_CREDENTIALS).aws_access_key_id }}
+          aws-secret-access-key: ${{ fromJSON(secrets.STORAGE_CREDENTIALS).aws_secret_access_key }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Allow SSH from this runner
+        id: open_ssh
+        env:
+          SECURITY_GROUP_ID: ${{ vars.SECURITY_GROUP_ID }}
+        run: |
+          python - <<'PYEOF'
+          import ipaddress, os, urllib.request
+          import boto3
+
+          ip = urllib.request.urlopen("https://checkip.amazonaws.com", timeout=20).read().decode().strip()
+          cidr = str(ipaddress.IPv4Address(ip)) + "/32"
+          boto3.client("ec2").authorize_security_group_ingress(
+              GroupId=os.environ["SECURITY_GROUP_ID"], IpProtocol="tcp", FromPort=22, ToPort=22, CidrIp=cidr)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"cidr={cidr}\n")
+          PYEOF
+
+      - name: Copy serving code to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          fingerprint: ${{ vars.SERVER_FINGERPRINT }}
+          source: src/serve.py
+          target: /home/${{ secrets.SERVER_USER }}/src
+          strip_components: 1
+          overwrite: true
+
+      - name: Publish approved model to Amazon S3
+        env:
+          ARTIFACT_BUCKET: ${{ secrets.ARTIFACT_BUCKET }}
+        run: |
+          python - <<'PYEOF'
+          import os
+          import boto3
+
+          client = boto3.client("s3")
+          bucket = os.environ["ARTIFACT_BUCKET"]
+          client.upload_file("models/model.joblib", bucket, "artifacts/current/model.joblib")
+          client.upload_file("outputs/report.json", bucket, "artifacts/current/report.json")
+          print("Published approved model and report.")
+          PYEOF
+
       - name: SSH deploy to VM
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
+          fingerprint: ${{ vars.SERVER_FINGERPRINT }}
           script: |
-            # TODO 7: Restart service income-api tren VM.
-            # TODO 8: Cho server san sang roi goi curl /healthz de xac nhan.
-            #         Neu health check that bai sau nhieu lan thu, thoat voi exit 1.
-            #
-            # Goi y:
-            #   sudo systemctl restart income-api
-            #   sleep 5
-            #   curl -sf http://localhost:8080/healthz && echo "Health check passed." || exit 1
-            # <dien lenh bash o day>
+            set -eu
+            sudo systemctl restart income-api
+            ready=0
+            for attempt in $(seq 1 30); do
+              if curl --max-time 5 -sf http://localhost:8080/healthz; then
+                ready=1
+                break
+              fi
+              sleep 2
+            done
+            test "$ready" -eq 1 || { echo "Health check failed."; exit 1; }
+            curl --max-time 10 -sf -X POST http://localhost:8080/score \
+              -H 'Content-Type: application/json' \
+              -d '{"features": [28, 2, 14, 2, 11, 0, 1, 0, 0, 45]}' \
+              | python3 -c 'import json,sys; r=json.load(sys.stdin); p=r.get("prediction"); assert type(p) is int and p in (0,1); assert r.get("label") == ("thu_nhap_cao" if p else "thu_nhap_thap")'
+            echo "Health and prediction checks passed."
+
+      - name: Remove runner SSH access
+        if: ${{ always() && steps.open_ssh.outputs.cidr != '' }}
+        env:
+          SECURITY_GROUP_ID: ${{ vars.SECURITY_GROUP_ID }}
+          RUNNER_CIDR: ${{ steps.open_ssh.outputs.cidr }}
+        run: |
+          python - <<'PYEOF'
+          import os
+          import boto3
+          boto3.client("ec2").revoke_security_group_ingress(
+              GroupId=os.environ["SECURITY_GROUP_ID"], IpProtocol="tcp", FromPort=22, ToPort=22,
+              CidrIp=os.environ["RUNNER_CIDR"])
+          PYEOF
