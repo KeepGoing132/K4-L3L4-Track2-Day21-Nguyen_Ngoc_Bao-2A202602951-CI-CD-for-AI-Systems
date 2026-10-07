@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'data/*.dvc'
       - 'data/**/*.dvc'
       - '.dvc/config'
       - 'src/**/*.py'
@@ -47,7 +48,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run unit tests
-        # TODO 1: Viet lenh de chay pytest tren thu muc tests/ voi co -v
         run: pytest tests/ -v
 
 
@@ -93,7 +93,6 @@ jobs:
 
       - name: Read report
         id: read_report
-        # TODO 4: Doc gia tri "f1_score" tu outputs/report.json bang Python inline.
         run: |
           F1=$(python -c "import json; d=json.load(open('outputs/report.json')); print(d['f1_score'])")
           echo "f1=$F1" >> $GITHUB_OUTPUT
@@ -130,7 +129,6 @@ jobs:
     steps:
 
       - name: Check quality gate
-        # TODO 6: Doc f1 tu output cua job train.
         run: |
           python - <<'PYEOF'
           import math
