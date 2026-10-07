@@ -4,6 +4,12 @@ Course: AIInAction - VinUni
 Buổi: Day 21 - CI/CD cho AI Systems
 Khoá: K4
 
+**Trạng thái AWS ngày 07/10/2026:** đã xóa EC2, ổ EBS và toàn bộ bucket S3 theo
+yêu cầu dừng phát sinh phí. API đã ngừng hoạt động; workflow triển khai đã bị vô hiệu hóa
+và thông tin xác thực triển khai đã được thu hồi. Ảnh, báo cáo và các lần chạy GitHub
+Actions vẫn được giữ làm bằng chứng kết quả trước khi dọn hạ tầng.
+Xem [biên bản dọn AWS](nop-bai/ket-qua-tat-cloud.json).
+
 ---
 
 ## Mục Tiêu Học Tập
@@ -258,8 +264,9 @@ $env:MLFLOW_TRACKING_URI = "sqlite:///mlflow.db"
 
 **Kết quả đã kiểm chứng trên AWS ngày 07/10/2026:** bước 2 và bước 3 đều có bốn
 job thành công, bước 3 tự kích hoạt từ commit dữ liệu. F1 tăng từ 0.7156 lên 0.7248.
-Quality Gate chặn model F1 0.6051 và giữ nguyên model đang chạy. API EC2:
-http://54.253.158.211:8080/healthz.
+Quality Gate đã chặn model F1 0.6051 và giữ nguyên model lúc kiểm tra.
+API EC2 tại `http://54.253.158.211:8080/healthz` đã được kiểm chứng trước khi
+hạ tầng bị xóa; địa chỉ này không còn phục vụ bài lab.
 
 Xem [bằng chứng nộp bài](nop-bai/README.md), [báo cáo](nop-bai/bao-cao.md),
 [kết quả cloud](nop-bai/ket-qua-cloud.json) và [ảnh thực tế](nop-bai/anh-chup-man-hinh/).

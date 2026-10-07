@@ -2,6 +2,11 @@
 
 **Nguyễn Ngọc Bảo · 2A202602951 · K4**
 
+**Trạng thái hiện tại (07/10/2026):** đã xóa các tài nguyên AWS của bài lab để
+dừng phát sinh phí. API và DVC remote không còn hoạt động. Workflow đã bị vô hiệu hóa,
+khóa CI và thông tin triển khai đã được thu hồi; ảnh và kết quả bên dưới ghi nhận
+lần chạy thành công trước khi dọn hạ tầng. Xem [biên bản dọn AWS](ket-qua-tat-cloud.json).
+
 - [x] [Repository công khai](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems) chứa code, workflow và DVC metadata.
 - [x] MLflow có ít nhất ba bộ siêu tham số và đủ F1/accuracy.
 - [x] [Bước 2](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37607586482): cả bốn job thành công trên 22.361 mẫu.
@@ -32,5 +37,6 @@ Kết quả cloud đầy đủ: [ket-qua-cloud.json](ket-qua-cloud.json).
 Kết quả local trước triển khai: [ket-qua-local.json](ket-qua-local.json).
 Hướng dẫn AWS và cách dừng tài nguyên sau khi chấm: [tasks/aws.md](../tasks/aws.md).
 
-API đang hoạt động: http://54.253.158.211:8080/healthz.
-EC2, EBS và IPv4 công khai được giữ để chấm bài và có thể phát sinh phí.
+API trước khi dọn: `http://54.253.158.211:8080/healthz` (đã ngừng hoạt động).
+EC2 đã terminate, EBS đã xóa, IPv4 tự cấp đã được giải phóng và bucket S3 đã xóa
+cả các phiên bản dữ liệu/model cũ. Muốn kiểm tra API trực tiếp cần triển khai lại hạ tầng.

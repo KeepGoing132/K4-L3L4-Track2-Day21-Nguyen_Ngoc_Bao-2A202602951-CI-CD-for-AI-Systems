@@ -1,0 +1,34 @@
+{
+  "project": "income-day21-2a202602951",
+  "region": "ap-southeast-2",
+  "instance_id": "i-0e4cab99d0a4e7a82",
+  "bucket": "income-day21-2a202602951-704887592344",
+  "actions": [
+    "Disabled deployment workflow; existing evidence retained.",
+    "Cancel old run 37605584899: HTTP 409.",
+    "Cancel old run 37604519775: HTTP 409.",
+    "Requested EC2 termination; root EBS has DeleteOnTermination=true.",
+    "Backed up 10 S3 object versions locally (ignored by Git).",
+    "Deleted S3 bucket, all object versions/delete markers and unfinished multipart uploads.",
+    "Deleted lab CI IAM user and its access keys.",
+    "Removed lab AWS credentials, SSH key and deployment settings from GitHub.",
+    "EC2 state: terminated",
+    "Deleted lab security group.",
+    "Deleted lab EC2 key pair, IAM role and instance profile.",
+    "Verified: lab EC2 terminated, root EBS removed, S3 absent; no project snapshots, EIPs or NAT gateways."
+  ],
+  "updated_at": "2026-10-07T18:31:25.450666+07:00",
+  "volume_ids": [
+    "vol-0aa174a04e415e8dd"
+  ],
+  "verified": true,
+  "ec2_state": "terminated",
+  "root_ebs_deleted": true,
+  "s3_bucket_deleted": true,
+  "api_available": false,
+  "scope": "AWS resources created for this Day21 lab; other account resources unchanged",
+  "automatic_public_ipv4_released": true,
+  "deployment_workflow_disabled": true,
+  "github_deployment_credentials_removed": true,
+  "verified_at": "2026-10-07T18:33:16.377177+07:00"
+}

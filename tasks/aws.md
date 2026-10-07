@@ -1,5 +1,11 @@
 # Triển khai lab trên AWS
 
+**Trạng thái ngày 07/10/2026:** hạ tầng của lần nộp bài đã được xóa theo yêu cầu
+dừng phát sinh phí. Workflow đã bị vô hiệu hóa, Secrets/Variables triển khai và
+tài khoản CI đã được thu hồi. Hướng dẫn bên dưới mô tả kiến trúc đã kiểm chứng;
+cần tạo lại hạ tầng và thông tin xác thực để triển khai lần nữa.
+Xem [biên bản dọn AWS](../nop-bai/ket-qua-tat-cloud.json).
+
 Phiên bản này dùng Amazon S3 và EC2 Ubuntu 22.04 tại `ap-southeast-2` (Sydney), vùng
 được phép trong tài khoản lab. Hướng dẫn GCP gốc ở `buoc-2.md` chỉ để tham khảo.
 

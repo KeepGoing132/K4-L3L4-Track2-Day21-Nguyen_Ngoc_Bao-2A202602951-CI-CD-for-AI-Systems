@@ -48,6 +48,9 @@ nguồn; chưa chứng minh khả năng tổng quát hóa trên nguồn khác.
 
 [Thử model yếu](https://github.com/KeepGoing132/K4-L3L4-Track2-Day21-Nguyen_Ngoc_Bao-2A202602951-CI-CD-for-AI-Systems/actions/runs/37606981690): F1 0.6051 làm Quality Gate
 fail, Release skipped; VersionId và ETag model S3 trước/sau giống nhau.
-API `http://54.253.158.211:8080` trả health OK và dự đoán hợp lệ.
+API `http://54.253.158.211:8080` đã trả health OK và dự đoán hợp lệ.
 Số liệu, trạng thái job và kiểm tra API lưu tại [ket-qua-cloud.json](ket-qua-cloud.json);
 ảnh thật trong [anh-chup-man-hinh/](anh-chup-man-hinh/).
+
+**Sau khi ghi nhận kết quả:** đã xóa hạ tầng AWS theo yêu cầu dừng phát sinh phí
+ngày 07/10/2026; API không còn hoạt động. [Biên bản dọn AWS](ket-qua-tat-cloud.json).
